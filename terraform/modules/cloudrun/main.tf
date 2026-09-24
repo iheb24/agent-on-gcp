@@ -61,3 +61,15 @@ resource "google_cloud_run_v2_service" "agent_service" {
 output "service_url" {
   value = google_cloud_run_v2_service.agent_service.uri
 }
+
+output "project_id" {
+  value = google_cloud_run_v2_service.agent_service.project
+}
+
+output "region" {
+  value = google_cloud_run_v2_service.agent_service.location
+}
+
+output "service_name" {
+  value = google_cloud_run_v2_service.agent_service.name
+}
