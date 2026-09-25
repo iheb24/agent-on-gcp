@@ -2,58 +2,20 @@ import os
 import pathlib
 from datetime import datetime, timezone
 
-import google.auth
-import google.auth.transport.requests
-import httpx
 from google.adk import Agent
 from google.adk.integrations.skill_registry import GCPSkillRegistry
 from google.adk.skills import load_skill_from_dir
-from google.adk.tools.mcp_tool import McpToolset, StreamableHTTPConnectionParams
 from google.adk.tools.skill_toolset import SkillToolset
 from google.genai import types
 from pydantic import BaseModel, Field
 
+from .adapters.bq_mcp_client import initialize_bq_mcp
+
 project_id = os.environ.get("GOOGLE_CLOUD_PROJECT", "my-project")
 skill_location = os.environ.get("GOOGLE_CLOUD_SKILL_LOCATION", "us")
 
-
-class GoogleCloudBearerAuth(httpx.Auth):
-    """Attaches a fresh Google OAuth2 bearer token to every request.
-
-    Static headers go stale because access tokens expire after ~1 hour;
-    this refreshes Application Default Credentials on demand instead.
-    """
-
-    def __init__(self):
-        self._credentials, _ = google.auth.default(
-            scopes=["https://www.googleapis.com/auth/cloud-platform"]
-        )
-        self._refresh_request = google.auth.transport.requests.Request()
-
-    def auth_flow(self, request: httpx.Request):
-        if not self._credentials.valid:
-            self._credentials.refresh(self._refresh_request)
-        request.headers["Authorization"] = f"Bearer {self._credentials.token}"
-        yield request
-
-
-def gcp_mcp_http_client_factory(headers=None, timeout=None, auth=None):
-    """httpx client factory for GCP managed MCP servers (adds Google auth)."""
-    return httpx.AsyncClient(
-        headers=headers,
-        timeout=timeout if timeout is not None else httpx.Timeout(60.0, read=300.0),
-        auth=auth or GoogleCloudBearerAuth(),
-        follow_redirects=True,
-    )
-
-
-# 1. Official Managed MCP Server (requires an authenticated caller)
-bq_mcp = McpToolset(
-    connection_params=StreamableHTTPConnectionParams(
-        url="https://bigquery.googleapis.com/mcp",
-        httpx_client_factory=gcp_mcp_http_client_factory,
-    )
-)
+# 1. Official Managed MCP Server (authenticated via ADC, see adapters/)
+bq_mcp = initialize_bq_mcp()
 
 
 # 2. Custom Python Tool
