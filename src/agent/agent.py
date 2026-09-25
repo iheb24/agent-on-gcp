@@ -1,15 +1,48 @@
 import os
+import pathlib
+from datetime import datetime, timezone
 
 from google.adk import Agent
+from google.adk.integrations.skill_registry import GCPSkillRegistry
+from google.adk.skills import load_skill_from_dir
+from google.adk.tools.mcp_tool import McpToolset, StreamableHTTPConnectionParams
+from google.adk.tools.skill_toolset import SkillToolset
 from google.genai import types
 from pydantic import BaseModel, Field
 
-from src.agent.adapters.bq_mcp_client import BQMCPClientAdapter
-
 project_id = os.environ.get("GOOGLE_CLOUD_PROJECT", "my-project")
-location = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
+skill_location = os.environ.get("GOOGLE_CLOUD_SKILL_LOCATION", "us")
 
-bq_client = BQMCPClientAdapter(project_id=project_id, location=location)
+# 1. Official Managed MCP Server
+bq_mcp = McpToolset(
+    connection_params=StreamableHTTPConnectionParams(
+        url="https://bigquery.googleapis.com/mcp"
+    )
+)
+
+
+# 2. Custom Python Tool
+def get_current_utc_date() -> str:
+    """Returns the current UTC date and time in ISO 8601 format. Useful for generating time-relative SQL queries."""
+    return datetime.now(timezone.utc).isoformat()
+
+
+# 3. Custom Local Skill
+custom_skill_dir = pathlib.Path(__file__).parent / "skills" / "custom-sql-guidelines"
+custom_skill = load_skill_from_dir(custom_skill_dir)
+
+# 4. Managed Platform Skill ('bigquery-basics') via GCP Skill Registry
+MANAGED_SKILL_NAME = "bigquery-basics"
+skill_registry = GCPSkillRegistry(
+    project_id=project_id,
+    location=skill_location,
+)
+
+# Combined SkillToolset hosting local custom skill and connected to GCP Registry
+skill_toolset = SkillToolset(
+    skills=[custom_skill],
+    registry=skill_registry,
+)
 
 
 class AgentResponseSchema(BaseModel):
@@ -21,28 +54,18 @@ class AgentResponseSchema(BaseModel):
     )
 
 
-async def query_bigquery(sql: str) -> str:
-    """Executes a BigQuery Standard SQL query and returns the data."""
-    await bq_client.connect()
-    try:
-        result = await bq_client.call_tool("query", {"sql": sql})
-        bq_data = ""
-        if result.content:
-            for c in result.content:
-                if c.type == "text":
-                    bq_data += c.text
-        return bq_data
-    except Exception as e:
-        return f"Error executing query: {str(e)}"
-    finally:
-        await bq_client.disconnect()
-
-
 agent = Agent(
     name="bq_agent",
     model="gemini-2.5-flash",
-    instruction="You are a data assistant. Convert user queries to BigQuery Standard SQL, use the query_bigquery tool to execute them, and summarize the results naturally.",
-    tools=[query_bigquery],
+    instruction=(
+        "You are a data assistant. Convert user queries to BigQuery Standard SQL, "
+        "use the managed BigQuery MCP tools to execute them, and summarize the results naturally. "
+        "Always use the get_current_utc_date tool when dealing with time-relative queries (e.g., 'today', 'last week'). "
+        "Always follow the local 'custom-sql-guidelines' skill for organizational SQL safety and formatting constraints. "
+        f"Use the load_skill tool to load the managed '{MANAGED_SKILL_NAME}' skill from the "
+        "Google Cloud Skill Registry to guide dataset navigation and schema discovery."
+    ),
+    tools=[bq_mcp, get_current_utc_date, skill_toolset],
     output_schema=AgentResponseSchema,
     generate_content_config=types.GenerateContentConfig(
         temperature=0.1,

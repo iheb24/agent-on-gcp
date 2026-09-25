@@ -16,13 +16,18 @@ provider "google" {
 variable "project_id" {
   type        = string
   description = "The GCP project ID"
-  # default     = "my-project-id"
 }
 
 variable "region" {
   type        = string
   description = "The GCP region"
   default     = "us-central1"
+}
+
+variable "image_url" {
+  type        = string
+  description = "The container image URL to deploy on Cloud Run"
+  default     = "us-docker.pkg.dev/cloudrun/container/hello"
 }
 
 module "iam" {
@@ -36,7 +41,7 @@ module "cloudrun" {
   project_id            = var.project_id
   region                = var.region
   service_name          = "bq-agent-service"
-  image_url             = "us-docker.pkg.dev/cloudrun/container/hello" # Placeholder
+  image_url             = var.image_url
   service_account_email = module.iam.agent_service_account_email
 }
 
@@ -65,4 +70,14 @@ resource "google_cloud_run_v2_service_iam_member" "scheduler_invoker" {
   name     = module.cloudrun.service_name
   role     = "roles/run.invoker"
   member   = "serviceAccount:${module.iam.agent_service_account_email}"
+}
+
+output "cloud_run_service_url" {
+  description = "URL of the deployed private Cloud Run service"
+  value       = module.cloudrun.service_url
+}
+
+output "agent_service_account" {
+  description = "Email of the provisioned agent Service Account"
+  value       = module.iam.agent_service_account_email
 }
