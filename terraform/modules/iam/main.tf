@@ -45,6 +45,13 @@ resource "google_project_iam_member" "aiplatform_user" {
   member  = "serviceAccount:${google_service_account.agent_sa.email}"
 }
 
+# Grant MCP Tool User so the agent can call managed Google Cloud MCP servers
+resource "google_project_iam_member" "mcp_tool_user" {
+  project = var.project_id
+  role    = "roles/mcp.toolUser"
+  member  = "serviceAccount:${google_service_account.agent_sa.email}"
+}
+
 # Grant telemetry export roles (traces, metrics, logs) for Cloud Operations
 resource "google_project_iam_member" "telemetry" {
   for_each = toset([

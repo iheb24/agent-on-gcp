@@ -33,7 +33,7 @@ flowchart TD
 
 ## Modules
 
-- **`iam`**: Sets up the Service Account for the agent and grants it the necessary roles (`roles/bigquery.dataViewer`, `roles/bigquery.jobUser`, `roles/aiplatform.user`, plus `roles/cloudtrace.agent`, `roles/monitoring.metricWriter`, `roles/logging.logWriter` for telemetry export).
+- **`iam`**: Sets up the Service Account for the agent and grants it the necessary roles (`roles/bigquery.dataViewer`, `roles/bigquery.jobUser`, `roles/aiplatform.user`, `roles/mcp.toolUser` (managed MCP tool calls), plus `roles/cloudtrace.agent`, `roles/monitoring.metricWriter`, `roles/logging.logWriter` for telemetry export).
 - **`cloudrun`**: Provisions a **private** Cloud Run service. By default, Cloud Run restricts access to only identities with the `roles/run.invoker` role. The container image attribute is managed by `agents-cli` and excluded from Terraform drift via `lifecycle { ignore_changes = [...] }`.
 - **`scheduler`**: Creates a Cloud Scheduler cron job to periodically trigger the agent. It hits the native ADK `/run` endpoint with a JSON payload, authenticating to the private Cloud Run service using an OIDC token generated from the agent's Service Account.
 
