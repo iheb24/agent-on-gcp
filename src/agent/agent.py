@@ -80,3 +80,6 @@ agent = Agent(
         ],
     ),
 )
+
+# ADK loaders (local cli, api_server, Cloud Run) require this symbol.
+root_agent = agent
