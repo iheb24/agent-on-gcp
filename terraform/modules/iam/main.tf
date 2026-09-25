@@ -45,6 +45,18 @@ resource "google_project_iam_member" "aiplatform_user" {
   member  = "serviceAccount:${google_service_account.agent_sa.email}"
 }
 
+# Grant telemetry export roles (traces, metrics, logs) for Cloud Operations
+resource "google_project_iam_member" "telemetry" {
+  for_each = toset([
+    "roles/cloudtrace.agent",
+    "roles/monitoring.metricWriter",
+    "roles/logging.logWriter",
+  ])
+  project = var.project_id
+  role    = each.value
+  member  = "serviceAccount:${google_service_account.agent_sa.email}"
+}
+
 output "agent_service_account_email" {
   value = google_service_account.agent_sa.email
 }
