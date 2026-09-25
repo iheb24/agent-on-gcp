@@ -122,12 +122,15 @@ gcloud config set project YOUR_PROJECT_ID
 
 2. **Deploy the application with agents-cli** (builds the container on Cloud Build and updates the service):
    ```bash
-   uvx --from google-agents-cli agents-cli deploy src/agent \
+   cd ../../src/agent
+   uvx --from google-agents-cli agents-cli deploy \
+     --deployment-target cloud_run \
      --project="YOUR_PROJECT_ID" \
      --region="us-central1" \
-     --service-name="$(terraform output -raw cloudrun_service_name)" \
-     --service-account="$(terraform output -raw service_account_email)"
+     --service-name="$(cd ../../terraform/environments/dev && terraform output -raw cloudrun_service_name)" \
+     --service-account="$(cd ../../terraform/environments/dev && terraform output -raw service_account_email)"
    ```
+   *(`agents-cli deploy` takes no positional path — it deploys the current directory, so run it from `src/agent/`.)*
 
 ---
 

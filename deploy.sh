@@ -34,12 +34,16 @@ main() {
     SERVICE_ACCOUNT=$(terraform -chdir="$TF_DIR" output -raw service_account_email)
 
     # 3. Deploy Application Logic via agents-cli
+    #    agents-cli deploy takes no positional path; it deploys the current
+    #    project directory, so run it inside src/agent.
     echo "☁️  Deploying agent to Cloud Run via agents-cli..."
-    uvx --from google-agents-cli agents-cli deploy src/agent \
+    (cd src/agent && uvx --from google-agents-cli agents-cli deploy \
+        --deployment-target cloud_run \
         --project="$PROJECT_ID" \
         --region="$REGION" \
         --service-name="$SERVICE_NAME" \
-        --service-account="$SERVICE_ACCOUNT"
+        --service-account="$SERVICE_ACCOUNT" \
+        --no-confirm-project)
 
     if [ -f "src/agent/deployment_metadata.json" ]; then
         mv src/agent/deployment_metadata.json .
