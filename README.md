@@ -1,13 +1,14 @@
-# Agent on GCP: Cloud Run Architecture
+# Agent on GCP: BigQuery Data Assistant
 
-A production-ready BigQuery natural language agent built with the **Google Agent Development Kit (ADK)** and deployed to **Google Cloud Run** using **Terraform** and **agents-cli**.
+A production-ready BigQuery natural language agent built with the **Google Agent Development Kit (ADK)** and deployed natively to **Google Cloud Run** using **Terraform** and **agents-cli**.
 
-> **Note on Branch Architecture**:
-> This branch (`feature/cloudrun-agent`) showcases the **self-hosted containerized** reference architecture using Cloud Run and Terraform. For the fully managed serverless deployment on Vertex AI Agent Engine, refer to the `main` branch.
+This repository serves as a reference architecture demonstrating **dual extension patterns** for both tools and skills:
+1. **Managed Tools & Skills**: Leveraging Google Cloud's official managed MCP servers and the Gemini Agent Platform Skill Registry.
+2. **Custom Tools & Skills**: Extending the agent with custom Python tools and local organizational skill definitions following the `agentskills.io` standard.
 
 ---
 
-## Architectural Highlights
+## Key Features
 
 - **Dual Tool Pattern**:
   - **Managed MCP Server**: Connects via `McpToolset` to `https://bigquery.googleapis.com/mcp`, natively inheriting Google Cloud's official BigQuery MCP tools (query execution, schema inspection, dataset exploration).
@@ -84,7 +85,14 @@ uv run pre-commit run --all-files
 
 ---
 
-## Deployment
+## Branch Strategy
+
+- **`main` branch**: Focuses on direct CLI deployments (using the native ADK CLI or `agents-cli` auto-scaffolding). It is lightweight and focuses strictly on the agent runtime code.
+- **`feature/cloudrun-agent` branch**: Explores a hybrid Infrastructure-as-Code (IaC) pattern. It contains a Terraform-managed Cloud Run deployment pipeline (`terraform apply` + `agents-cli`), allowing the agent infrastructure to be configured further alongside accessory resources (e.g., Cloud Scheduler, private networking, databases).
+
+---
+
+## Deployment & Lifecycle Management
 
 ### Option A: Automated Hybrid Deployment (Recommended)
 
