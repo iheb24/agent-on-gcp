@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-set -e
+# Hybrid deployment: Terraform owns the infrastructure (Cloud Run service,
+# IAM, Cloud Scheduler), agents-cli owns the application delivery (builds the
+# container on Cloud Build and updates the Cloud Run service image).
+set -euo pipefail
 
 main() {
-    echo "🚀 Starting Deployment to Google Cloud Run with Terraform..."
+    echo "🚀 Starting Hybrid Deployment (Terraform + agents-cli)..."
 
     # 1. Ensure GCP project ID is set
     PROJECT_ID=$(gcloud config get-value project 2>/dev/null || true)
@@ -12,38 +15,45 @@ main() {
     fi
 
     REGION="${GOOGLE_CLOUD_LOCATION:-us-central1}"
-    IMAGE_TAG="gcr.io/${PROJECT_ID}/bq-agent-service:latest"
+    TF_DIR="terraform/environments/dev"
 
     echo "✅ Using Project: $PROJECT_ID"
     echo "✅ Target Region: $REGION"
-    echo "📦 Target Container: $IMAGE_TAG"
 
-    # 2. Build the container image via Google Cloud Build
-    echo "☁️  Building container image via Google Cloud Build..."
-    gcloud builds submit --tag "$IMAGE_TAG" . --project="$PROJECT_ID"
-
-    # 3. Provision Infrastructure via Terraform
+    # 2. Provision Infrastructure via Terraform
+    #    On the first run this deploys a placeholder image; the image attribute
+    #    is ignored afterwards (lifecycle ignore_changes) so agents-cli owns it.
     echo "🏗️  Applying Terraform Infrastructure..."
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    cd "$SCRIPT_DIR/terraform/environments/dev"
-
-    terraform init
-    terraform apply \
+    terraform -chdir="$TF_DIR" init
+    terraform -chdir="$TF_DIR" apply \
         -var="project_id=$PROJECT_ID" \
         -var="region=$REGION" \
-        -var="image_url=$IMAGE_TAG" \
         -auto-approve
 
+    SERVICE_NAME=$(terraform -chdir="$TF_DIR" output -raw cloudrun_service_name)
+    SERVICE_ACCOUNT=$(terraform -chdir="$TF_DIR" output -raw service_account_email)
+
+    # 3. Deploy Application Logic via agents-cli
+    echo "☁️  Deploying agent to Cloud Run via agents-cli..."
+    uvx --from google-agents-cli agents-cli deploy src/agent \
+        --project="$PROJECT_ID" \
+        --region="$REGION" \
+        --service-name="$SERVICE_NAME" \
+        --service-account="$SERVICE_ACCOUNT"
+
+    if [ -f "src/agent/deployment_metadata.json" ]; then
+        mv src/agent/deployment_metadata.json .
+    fi
+
     # 4. Extract and display outputs
-    SERVICE_URL=$(terraform output -raw cloud_run_service_url)
-    AGENT_SA=$(terraform output -raw agent_service_account)
+    SERVICE_URL=$(terraform -chdir="$TF_DIR" output -raw cloud_run_service_url)
 
     echo ""
     echo "=========================================================="
     echo "✅ Deployment Successful!"
     echo "=========================================================="
     echo "🌐 Cloud Run Service URL: $SERVICE_URL"
-    echo "🔐 Agent Service Account: $AGENT_SA"
+    echo "🔐 Agent Service Account: $SERVICE_ACCOUNT"
     echo "⏰ Cloud Scheduler: Configured to invoke $SERVICE_URL/run daily"
     echo ""
     echo "To test the private service using your active identity:"

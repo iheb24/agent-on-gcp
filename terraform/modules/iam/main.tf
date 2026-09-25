@@ -38,6 +38,13 @@ resource "google_project_iam_member" "bq_job_user" {
   member  = "serviceAccount:${google_service_account.agent_sa.email}"
 }
 
+# Grant Vertex AI User so the agent can call Gemini models
+resource "google_project_iam_member" "aiplatform_user" {
+  project = var.project_id
+  role    = "roles/aiplatform.user"
+  member  = "serviceAccount:${google_service_account.agent_sa.email}"
+}
+
 output "agent_service_account_email" {
   value = google_service_account.agent_sa.email
 }

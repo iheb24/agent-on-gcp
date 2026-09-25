@@ -81,3 +81,13 @@ output "agent_service_account" {
   description = "Email of the provisioned agent Service Account"
   value       = module.iam.agent_service_account_email
 }
+
+output "cloudrun_service_name" {
+  description = "Name of the Cloud Run service (used by agents-cli deploy)"
+  value       = module.cloudrun.service_name
+}
+
+output "service_account_email" {
+  description = "Email of the agent Service Account (used by agents-cli deploy)"
+  value       = module.iam.agent_service_account_email
+}

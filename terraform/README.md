@@ -33,8 +33,8 @@ flowchart TD
 
 ## Modules
 
-- **`iam`**: Sets up the Service Account for the agent and grants it necessary BigQuery roles (`roles/bigquery.dataViewer`, `roles/bigquery.jobUser`).
-- **`cloudrun`**: Provisions a **private** Cloud Run service. By default, Cloud Run restricts access to only identities with the `roles/run.invoker` role.
+- **`iam`**: Sets up the Service Account for the agent and grants it the necessary roles (`roles/bigquery.dataViewer`, `roles/bigquery.jobUser`, `roles/aiplatform.user`).
+- **`cloudrun`**: Provisions a **private** Cloud Run service. By default, Cloud Run restricts access to only identities with the `roles/run.invoker` role. The container image attribute is managed by `agents-cli` and excluded from Terraform drift via `lifecycle { ignore_changes = [...] }`.
 - **`scheduler`**: Creates a Cloud Scheduler cron job to periodically trigger the agent. It hits the native ADK `/run` endpoint with a JSON payload, authenticating to the private Cloud Run service using an OIDC token generated from the agent's Service Account.
 
 ## Security & Authentication
@@ -42,6 +42,6 @@ flowchart TD
 A key part of this architecture is its **private nature**. The Cloud Run service does *not* allow unauthenticated access (`allUsers`).
 
 1. **Internal Invocation (Cron)**: The Cloud Scheduler is explicitly granted the `run.invoker` role and uses OIDC to securely access the service.
-2. **External Invocation (Gemini Platform)**: The Gemini Agent Platform also authenticates via OIDC when you register the agent using the `gemini agents create` CLI command.
+2. **External Invocation (Gemini Agent Platform)**: The Gemini Agent Platform authenticates via OIDC when invoking the private Cloud Run endpoint.
 
-*Note: While infrastructure provisioning (Cloud Run, IAM) is managed here via Terraform, the registration of the agent to the Gemini Agent Platform is currently done via the CLI. This is because the Agent Platform is a specialized service where registration is often handled via imperative deployment tools or the `adk` CLI.*
+*Note: Infrastructure provisioning (Cloud Run, IAM, Scheduler) is managed here via Terraform, while application delivery (container build and service update) is handled by `agents-cli` via the root `deploy.sh`.*

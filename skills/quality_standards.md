@@ -31,10 +31,8 @@ uv run pre-commit run --all-files
    - We use `pytest` for unit testing.
    - We use `commitizen` to enforce Conventional Commits (`feat:`, `fix:`, `refactor:`, `docs:`).
 
-2. **Containerization & Docker**:
-   - We use [`hadolint`](https://github.com/hadolint/hadolint#install) to enforce Dockerfile best practices (pinning base images, avoiding root execution, minimizing layers).
-   - The container must run as a non-privileged user (`appuser`).
-   - The container must use native `adk api_server` as the entrypoint.
+2. **Containerization**:
+   - No committed `Dockerfile`. The container image is generated and built on Cloud Build by `agents-cli` during deployment.
 
 3. **Infrastructure as Code (Terraform)**:
    - We use `terraform_fmt` for formatting.

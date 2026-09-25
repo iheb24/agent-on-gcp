@@ -1,6 +1,6 @@
 # Agent on GCP: Cloud Run Architecture
 
-A production-ready BigQuery natural language agent built with the **Google Agent Development Kit (ADK)** and deployed to **Google Cloud Run** using **Terraform** and **Docker**.
+A production-ready BigQuery natural language agent built with the **Google Agent Development Kit (ADK)** and deployed to **Google Cloud Run** using **Terraform** and **agents-cli**.
 
 > **Note on Branch Architecture**:
 > This branch (`feature/cloudrun-agent`) showcases the **self-hosted containerized** reference architecture using Cloud Run and Terraform. For the fully managed serverless deployment on Vertex AI Agent Engine, refer to the `main` branch.
@@ -16,7 +16,7 @@ A production-ready BigQuery natural language agent built with the **Google Agent
   - **Managed Skill (`bigquery-basics`)**: Integrated via `GCPSkillRegistry` to dynamically retrieve best practices from Google Cloud's regional skill registry (`us`, `eu`, `global`).
   - **Custom Local Skill (`custom-sql-guidelines`)**: Authored in `src/agent/skills/custom-sql-guidelines/SKILL.md` to enforce organizational SQL safety rules (mandatory `LIMIT 1000`, partition filtering, and safe casting).
 - **Private Cloud Run Service**:
-  - Packaged via a hardened, multi-layer `Dockerfile` running native `adk api_server`.
+  - Container image generated and built on Cloud Build by `agents-cli` (no committed `Dockerfile`).
   - Disallows unauthenticated access (`allUsers`). Requests require Google-signed OIDC bearer tokens.
 - **Infrastructure as Code (Terraform)**:
   - Modular Terraform (`modules/iam`, `modules/cloudrun`, `modules/scheduler`) manages the Service Account, Cloud Run service, and scheduled cron jobs.
@@ -28,8 +28,8 @@ A production-ready BigQuery natural language agent built with the **Google Agent
 
 ```text
 ├── .pre-commit-config.yaml      # Quality, formatting, typing, terraform, and security hooks
-├── deploy.sh                    # Automated Cloud Build + Terraform deployment script
-├── Dockerfile                   # Hardened container image running ADK api_server
+├── deploy.sh                    # Hybrid Terraform + agents-cli deployment script
+├── destroy.sh                   # Terraform teardown script
 ├── pyproject.toml               # Python dependencies and tool configurations
 ├── README.md                    # Project documentation
 ├── skills/
@@ -56,7 +56,6 @@ A production-ready BigQuery natural language agent built with the **Google Agent
 - [`uv`](https://github.com/astral-sh/uv) package manager
 - Google Cloud SDK (`gcloud`)
 - [Terraform](https://www.terraform.io/) (>= 1.0)
-- [Hadolint](https://github.com/hadolint/hadolint#install) (Official cross-platform Dockerfile linter for Linux, macOS, and Windows)
 
 > **Note on Security Linters**: `checkov` is automatically installed inside the virtual environment via `uv pip install -e ".[dev]"`.
 
@@ -79,7 +78,7 @@ pre-commit install
 # Run unit tests
 uv run pytest
 
-# Run all pre-commit linters, Docker linters, and type checkers
+# Run all pre-commit linters and type checkers
 uv run pre-commit run --all-files
 ```
 
@@ -87,9 +86,9 @@ uv run pre-commit run --all-files
 
 ## Deployment
 
-### Option A: Automated Single-Step Deployment (Recommended)
+### Option A: Automated Hybrid Deployment (Recommended)
 
-The automated script builds the container image using Google Cloud Build and provisions all infrastructure via Terraform:
+The automated script provisions all infrastructure via Terraform, then builds and deploys the container via `agents-cli`:
 
 ```bash
 # 1. Authenticate to Google Cloud and set active project
@@ -103,19 +102,23 @@ gcloud config set project YOUR_PROJECT_ID
 
 ### Option B: Manual Step-by-Step Deployment
 
-1. **Build and push container image**:
-   ```bash
-   gcloud builds submit --tag "gcr.io/YOUR_PROJECT_ID/bq-agent-service:latest" .
-   ```
-
-2. **Provision infrastructure with Terraform**:
+1. **Provision infrastructure with Terraform**:
    ```bash
    cd terraform/environments/dev
    terraform init
    terraform apply \
      -var="project_id=YOUR_PROJECT_ID" \
-     -var="region=us-central1" \
-     -var="image_url=gcr.io/YOUR_PROJECT_ID/bq-agent-service:latest"
+     -var="region=us-central1"
+   ```
+   *(On the first run, Cloud Run starts with a placeholder image; the image attribute is ignored by Terraform afterwards.)*
+
+2. **Deploy the application with agents-cli** (builds the container on Cloud Build and updates the service):
+   ```bash
+   uvx --from google-agents-cli agents-cli deploy src/agent \
+     --project="YOUR_PROJECT_ID" \
+     --region="us-central1" \
+     --service-name="$(terraform output -raw cloudrun_service_name)" \
+     --service-account="$(terraform output -raw service_account_email)"
    ```
 
 ---
