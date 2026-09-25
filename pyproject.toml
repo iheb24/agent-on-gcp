@@ -18,7 +18,8 @@ dev = [
     "black",
     "isort",
     "ruff",
-    "pre-commit"
+    "pre-commit",
+    "checkov",
 ]
 
 [tool.black]

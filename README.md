@@ -56,6 +56,9 @@ A production-ready BigQuery natural language agent built with the **Google Agent
 - [`uv`](https://github.com/astral-sh/uv) package manager
 - Google Cloud SDK (`gcloud`)
 - [Terraform](https://www.terraform.io/) (>= 1.0)
+- [Hadolint](https://github.com/hadolint/hadolint#install) (Official cross-platform Dockerfile linter for Linux, macOS, and Windows)
+
+> **Note on Security Linters**: `checkov` is automatically installed inside the virtual environment via `uv pip install -e ".[dev]"`.
 
 ### 2. Environment Setup
 ```bash

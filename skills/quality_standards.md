@@ -32,7 +32,7 @@ uv run pre-commit run --all-files
    - We use `commitizen` to enforce Conventional Commits (`feat:`, `fix:`, `refactor:`, `docs:`).
 
 2. **Containerization & Docker**:
-   - We use `hadolint` to enforce Dockerfile best practices (pinning base images, avoiding root execution, minimizing layers).
+   - We use [`hadolint`](https://github.com/hadolint/hadolint#install) to enforce Dockerfile best practices (pinning base images, avoiding root execution, minimizing layers).
    - The container must run as a non-privileged user (`appuser`).
    - The container must use native `adk api_server` as the entrypoint.
 
