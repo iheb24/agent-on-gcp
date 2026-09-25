@@ -5,10 +5,13 @@ description = "A BigQuery natural language agent deployed on GCP using Cloud Run
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "google-genai",
-    "google-cloud-bigquery",
-    "mcp",
-    "google-adk"
+    "google-genai>=2.25.0",
+    "google-cloud-bigquery>=3.45.2",
+    "google-cloud-aiplatform>=2.2.0",
+    "mcp>=2.2.0",
+    "google-adk[otel-gcp]>=2.10.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.20.0",
+    "pydantic>=2.10.0",
 ]
 
 [project.optional-dependencies]

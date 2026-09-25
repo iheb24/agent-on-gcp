@@ -135,6 +135,16 @@ curl -X POST "$SERVICE_URL/run" \
 
 ---
 
+## Teardown
+
+To destroy the Cloud Run service, IAM bindings, and Cloud Scheduler job via Terraform:
+
+```bash
+./destroy.sh
+```
+
+---
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
