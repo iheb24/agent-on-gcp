@@ -19,9 +19,26 @@ main() {
     echo "✅ Using Project: $PROJECT_ID"
     echo "✅ Target Region: $REGION"
 
-    # 2. Remove agents-cli deployment state
-    echo "🧹 Removing agents-cli deployment metadata..."
+    # 2. Remove agents-cli deployment state and ALL scaffold-generated
+    #    artifacts (agents-cli has no 'scaffold clean' command), so the tree
+    #    returns to its pristine state.
+    echo "🧹 Removing agents-cli deployment metadata and scaffolded artifacts..."
     rm -f deployment_metadata.json
+    rm -f src/agent/Dockerfile
+    rm -f src/agent/agents-cli-manifest.yaml
+    rm -f src/agent/pyproject.toml
+    rm -f src/agent/uv.lock
+    rm -f src/agent/README.md
+    rm -f src/agent/GEMINI.md
+    rm -f src/agent/.env
+    rm -f src/agent/.gcloudignore
+    rm -f src/agent/.gitignore
+    rm -rf src/agent/deployment
+    rm -rf src/agent/tests
+    rm -rf src/agent/.venv
+    rm -f src/agent/app/fast_api_app.py
+    rm -rf src/agent/app/app_utils
+    rm -rf src/agent/app/__pycache__
 
     # 3. Destroy Infrastructure via Terraform
     echo "🏗️  Destroying Terraform Infrastructure..."
