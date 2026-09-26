@@ -90,7 +90,7 @@ uv run pre-commit run --all-files
 
 ## Branch Strategy
 
-- **`main` branch**: Focuses on direct CLI deployments (using the native ADK CLI or `agents-cli` auto-scaffolding). It is lightweight and focuses strictly on the agent runtime code.
+- **`main` branch**: Focuses on direct CLI deployments via `agents-cli` (Agent Runtime with managed state, or auto-scaffolded Cloud Run). It is lightweight and focuses strictly on the agent runtime code.
 - **`feature/cloudrun-agent` branch**: Explores a hybrid Infrastructure-as-Code (IaC) pattern. It contains a Terraform-managed Cloud Run deployment pipeline (`terraform apply` + `agents-cli`), allowing the agent infrastructure to be configured further alongside accessory resources (e.g., Cloud Scheduler, private networking, databases).
 
 ---

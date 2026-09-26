@@ -35,6 +35,14 @@ repos:
       - id: terraform_tflint
       - id: terraform_checkov
 
+  - repo: local
+    hooks:
+      - id: shellcheck
+        name: shellcheck
+        entry: uvx --from shellcheck-py shellcheck --severity=warning
+        language: system
+        types: [shell]
+
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v3.27.0
     hooks:
