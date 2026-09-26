@@ -1,8 +1,9 @@
 import os
 import pathlib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from google.adk import Agent
+from google.adk.apps import App
 from google.adk.integrations.skill_registry import GCPSkillRegistry
 from google.adk.skills import load_skill_from_dir
 from google.adk.tools.skill_toolset import SkillToolset
@@ -21,7 +22,7 @@ bq_mcp = initialize_bq_mcp()
 # 2. Custom Python Tool
 def get_current_utc_date() -> str:
     """Returns the current UTC date and time in ISO 8601 format. Useful for generating time-relative SQL queries."""
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 # 3. Custom Local Skill
@@ -80,3 +81,6 @@ agent = Agent(
 
 # ADK loaders (local cli, api_server, Agent Engine) require this symbol.
 root_agent = agent
+
+# agents-cli Cloud Run serving layer (app/fast_api_app.py) imports this AdkApp.
+app = App(root_agent=root_agent, name="bq_agent")

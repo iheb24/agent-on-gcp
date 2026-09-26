@@ -33,7 +33,15 @@ main() {
     SERVICE_NAME=$(terraform -chdir="$TF_DIR" output -raw cloudrun_service_name)
     SERVICE_ACCOUNT=$(terraform -chdir="$TF_DIR" output -raw service_account_email)
 
-    # 3. Deploy Application Logic via agents-cli
+    # 3. Scaffold the Cloud Run serving layer (Dockerfile, fast_api_app.py)
+    #    agents-cli deploy builds via `gcloud run deploy --source`, which
+    #    requires the generated Dockerfile.
+    echo "🛠️  Scaffolding Cloud Run deployment artifacts..."
+    (cd src/agent && uvx --from google-agents-cli agents-cli scaffold enhance \
+        --deployment-target cloud_run \
+        --auto-approve)
+
+    # 4. Deploy Application Logic via agents-cli
     #    agents-cli deploy takes no positional path; it deploys the current
     #    project directory, so run it inside src/agent.
     echo "☁️  Deploying agent to Cloud Run via agents-cli..."
@@ -49,7 +57,7 @@ main() {
         mv src/agent/deployment_metadata.json .
     fi
 
-    # 4. Extract and display outputs
+    # 5. Extract and display outputs
     SERVICE_URL=$(terraform -chdir="$TF_DIR" output -raw cloud_run_service_url)
 
     echo ""

@@ -1,6 +1,6 @@
 import pytest
 
-from src.agent.agent import (
+from src.agent.app.agent import (
     MANAGED_SKILL_NAME,
     agent,
     bq_mcp,

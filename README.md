@@ -15,7 +15,7 @@ This repository serves as a reference architecture demonstrating **dual extensio
   - **Custom Tool**: Implements `get_current_utc_date()` in Python to resolve relative dates (e.g., "today", "last week") during SQL query generation.
 - **Dual Skill Pattern**:
   - **Managed Skill (`bigquery-basics`)**: Integrated via `GCPSkillRegistry` to dynamically retrieve best practices from Google Cloud's regional skill registry (`us`, `eu`, `global`).
-  - **Custom Local Skill (`custom-sql-guidelines`)**: Authored in `src/agent/skills/custom-sql-guidelines/SKILL.md` to enforce organizational SQL safety rules (mandatory `LIMIT 1000`, partition filtering, and safe casting).
+  - **Custom Local Skill (`custom-sql-guidelines`)**: Authored in `src/agent/app/skills/custom-sql-guidelines/SKILL.md` to enforce organizational SQL safety rules (mandatory `LIMIT 1000`, partition filtering, and safe casting).
 - **Private Cloud Run Service**:
   - Container image generated and built on Cloud Build by `agents-cli` (no committed `Dockerfile`).
   - Disallows unauthenticated access (`allUsers`). Requests require Google-signed OIDC bearer tokens.
@@ -36,11 +36,14 @@ This repository serves as a reference architecture demonstrating **dual extensio
 ├── skills/
 │   └── quality_standards.md     # Engineering & pre-commit quality standards
 ├── src/
-│   └── agent/
-│       ├── agent.py             # ADK Agent definition, tools, and skill wiring
-│       └── skills/
-│           └── custom-sql-guidelines/
-│               └── SKILL.md     # Custom organizational SQL guidelines skill
+│   └── agent/                   # agents-cli project root (scaffold artifacts generated here)
+│       └── app/                 # Agent package (ADK + agents-cli convention)
+│           ├── agent.py         # ADK Agent definition, tools, and skill wiring
+│           ├── adapters/
+│           │   └── bq_mcp_client.py  # Authenticated managed BigQuery MCP client
+│           └── skills/
+│               └── custom-sql-guidelines/
+│                   └── SKILL.md # Custom organizational SQL guidelines skill
 ├── terraform/                   # Infrastructure as Code
 │   ├── environments/dev/        # Dev environment entrypoint
 │   └── modules/                 # Reusable modules (cloudrun, iam, scheduler)
@@ -120,9 +123,10 @@ gcloud config set project YOUR_PROJECT_ID
    ```
    *(On the first run, Cloud Run starts with a placeholder image; the image attribute is ignored by Terraform afterwards.)*
 
-2. **Deploy the application with agents-cli** (builds the container on Cloud Build and updates the service):
+2. **Scaffold the serving layer and deploy with agents-cli** (generates the Dockerfile + FastAPI app, builds the container on Cloud Build, and updates the service):
    ```bash
    cd ../../src/agent
+   uvx --from google-agents-cli agents-cli scaffold enhance --deployment-target cloud_run --auto-approve
    uvx --from google-agents-cli agents-cli deploy \
      --deployment-target cloud_run \
      --project="YOUR_PROJECT_ID" \
