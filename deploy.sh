@@ -35,9 +35,13 @@ echo "🛠️  Scaffolding Cloud Run deployment artifacts..."
     --deployment-target cloud_run \
     --auto-approve)
 
-# The agents-cli base template pins google-adk to >=2.8.0,<2.9.0, but the
-# agent code requires >=2.10; repin and relock (generated project is disposable).
-sed 's/>=2\.8\.0,<2\.9\.0/>=2.10.0/g' src/agent/pyproject.toml > src/agent/pyproject.toml.tmp
+# The agents-cli base template pins google-adk to >=2.8.0,<2.9.0 without the
+# mcp extra, but the agent code requires >=2.10 and the mcp package; repin
+# and relock (the generated project is disposable).
+sed \
+    -e 's/google-adk\[bigquery-analytics,gcp,otel-gcp\]>=2\.8\.0,<2\.9\.0/google-adk[bigquery-analytics,gcp,mcp,otel-gcp]>=2.10.0/' \
+    -e 's/google-adk\[eval\]>=2\.8\.0,<2\.9\.0/google-adk[eval]>=2.10.0/' \
+    src/agent/pyproject.toml > src/agent/pyproject.toml.tmp
 mv src/agent/pyproject.toml.tmp src/agent/pyproject.toml
 (cd src/agent && uv lock --quiet)
 
