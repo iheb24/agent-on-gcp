@@ -6,6 +6,11 @@ terraform {
       version = "~> 5.0"
     }
   }
+
+  backend "gcs" {
+    bucket = "project-tf-states"
+    prefix = "agent-on-gcp/dev"
+  }
 }
 
 provider "google" {
