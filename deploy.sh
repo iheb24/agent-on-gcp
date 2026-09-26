@@ -43,7 +43,8 @@ main() {
 
     # 4. Deploy Application Logic via agents-cli
     #    agents-cli deploy takes no positional path; it deploys the current
-    #    project directory, so run it inside src/agent.
+    #    project directory, so run it inside src/agent. The cloud_run target
+    #    is a thin wrapper over `gcloud run deploy` and writes no state file.
     echo "☁️  Deploying agent to Cloud Run via agents-cli..."
     (cd src/agent && uvx --from google-agents-cli agents-cli deploy \
         --deployment-target cloud_run \
@@ -52,10 +53,6 @@ main() {
         --service-name="$SERVICE_NAME" \
         --service-account="$SERVICE_ACCOUNT" \
         --no-confirm-project)
-
-    if [ -f "src/agent/deployment_metadata.json" ]; then
-        mv src/agent/deployment_metadata.json .
-    fi
 
     # 5. Extract and display outputs
     SERVICE_URL=$(terraform -chdir="$TF_DIR" output -raw cloud_run_service_url)
