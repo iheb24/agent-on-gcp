@@ -57,10 +57,17 @@ resource "google_cloud_run_v2_service" "agent_service" {
 
   # Ensure it is private (no unauthenticated invoker role granted by default)
 
-  # The container image is managed by agents-cli deploys, not Terraform.
-  # Without this, a terraform apply would revert the deployed image.
+  # The service is updated by agents-cli deploys, not Terraform. Without this,
+  # a terraform apply would revert the image, env vars, and labels set by
+  # agents-cli.
   lifecycle {
-    ignore_changes = [template[0].containers[0].image]
+    ignore_changes = [
+      template[0].containers[0].image,
+      template[0].containers[0].env,
+      template[0].labels,
+      client,
+      client_version,
+    ]
   }
 }
 
