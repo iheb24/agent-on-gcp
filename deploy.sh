@@ -35,6 +35,12 @@ echo "🛠️  Scaffolding Cloud Run deployment artifacts..."
     --deployment-target cloud_run \
     --auto-approve)
 
+# The agents-cli base template pins google-adk to >=2.8.0,<2.9.0, but the
+# agent code requires >=2.10; repin and relock (generated project is disposable).
+sed 's/>=2\.8\.0,<2\.9\.0/>=2.10.0/g' src/agent/pyproject.toml > src/agent/pyproject.toml.tmp
+mv src/agent/pyproject.toml.tmp src/agent/pyproject.toml
+(cd src/agent && uv lock --quiet)
+
 echo "☁️  Deploying agent to Cloud Run via agents-cli..."
 (cd src/agent && uvx --from google-agents-cli agents-cli deploy \
     --deployment-target cloud_run \
