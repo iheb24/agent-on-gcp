@@ -1,13 +1,10 @@
 import pytest
+from google.adk.skills import load_skill_from_dir
+from google.adk.tools.skill_toolset import SkillToolset
 
-from src.agent.app.agent import (
-    MANAGED_SKILL_NAME,
-    agent,
-    bq_mcp,
-    custom_skill,
-    get_current_utc_date,
-    skill_toolset,
-)
+from src.agent.app.agent import agent, bq_mcp, skill_toolset
+from src.agent.app.skillset import CUSTOM_SKILL_DIR, MANAGED_SKILL_NAME
+from src.agent.app.tools import get_current_utc_date
 
 
 @pytest.mark.asyncio
@@ -27,9 +24,10 @@ async def test_agent_initialization():
 async def test_skills_configuration():
     """Test that both custom local skill and managed skill references are configured."""
     # Check custom local skill
+    custom_skill = load_skill_from_dir(CUSTOM_SKILL_DIR)
     assert custom_skill is not None
     assert custom_skill.frontmatter.name == "custom-sql-guidelines"
 
-    # Check managed skill reference
+    # Check managed skill reference and assembled toolset
     assert MANAGED_SKILL_NAME == "bigquery-basics"
-    assert skill_toolset is not None
+    assert isinstance(skill_toolset, SkillToolset)
