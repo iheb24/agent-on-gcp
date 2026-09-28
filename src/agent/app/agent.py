@@ -1,20 +1,56 @@
-"""BigQuery Data Assistant agent: composition root.
-
-Building blocks (MCP client, function tools, skill wiring, schemas) live in
-their own modules; this file only assembles them into the ADK Agent.
-"""
+import os
+import pathlib
+from datetime import UTC, datetime
 
 from google.adk import Agent
 from google.adk.apps import App
+from google.adk.integrations.skill_registry import GCPSkillRegistry
+from google.adk.skills import load_skill_from_dir
+from google.adk.tools.skill_toolset import SkillToolset
 from google.genai import types
+from pydantic import BaseModel, Field
 
 from .adapters.bq_mcp_client import initialize_bq_mcp
-from .schemas import AgentResponseSchema
-from .skillset import MANAGED_SKILL_NAME, build_skill_toolset
-from .tools import get_current_utc_date
 
+project_id = os.environ.get("GOOGLE_CLOUD_PROJECT", "my-project")
+skill_location = os.environ.get("GOOGLE_CLOUD_SKILL_LOCATION", "us")
+
+# 1. Official Managed MCP Server (authenticated via ADC, see adapters/)
 bq_mcp = initialize_bq_mcp()
-skill_toolset = build_skill_toolset()
+
+
+# 2. Custom Python Tool
+def get_current_utc_date() -> str:
+    """Returns the current UTC date and time in ISO 8601 format. Useful for generating time-relative SQL queries."""
+    return datetime.now(UTC).isoformat()
+
+
+# 3. Custom Local Skill
+custom_skill_dir = pathlib.Path(__file__).parent / "skills" / "custom-sql-guidelines"
+custom_skill = load_skill_from_dir(custom_skill_dir)
+
+# 4. Managed Platform Skill ('bigquery-basics') via GCP Skill Registry
+MANAGED_SKILL_NAME = "bigquery-basics"
+skill_registry = GCPSkillRegistry(
+    project_id=project_id,
+    location=skill_location,
+)
+
+# Combined SkillToolset hosting local custom skill and connected to GCP Registry
+skill_toolset = SkillToolset(
+    skills=[custom_skill],
+    registry=skill_registry,
+)
+
+
+class AgentResponseSchema(BaseModel):
+    summary: str = Field(
+        description="A clear, natural language summary of the dataset usage or answer to the user's question."
+    )
+    sql_executed: str = Field(
+        description="The exact BigQuery SQL query that was executed, if any."
+    )
+
 
 agent = Agent(
     name="bq_agent",
