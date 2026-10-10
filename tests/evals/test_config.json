@@ -1,0 +1,68 @@
+{
+  "criteria": {
+    "tool_trajectory_avg_score": {
+      "threshold": 0.8,
+      "match_type": "IN_ORDER",
+      "ignore_args": true
+    },
+    "final_response_match_v2": {
+      "threshold": 0.7,
+      "judge_model_options": {
+        "judge_model": "gemini-3.5-flash",
+        "num_samples": 3
+      }
+    },
+    "rubric_based_tool_use_quality_v1": {
+      "threshold": 0.8,
+      "judge_model_options": {
+        "judge_model": "gemini-3.5-flash"
+      },
+      "rubrics": [
+        {
+          "rubric_id": "relative_date_tool_first",
+          "rubric_content": {
+            "text_property": "For any time-relative question (today, this week, last month, ...), the agent must call get_current_utc_date BEFORE generating or executing SQL."
+          }
+        },
+        {
+          "rubric_id": "sql_row_limit",
+          "rubric_content": {
+            "text_property": "Every executed SELECT query must include a LIMIT clause of at most 1000 rows, unless the user explicitly asked for more."
+          }
+        },
+        {
+          "rubric_id": "sql_no_select_star",
+          "rubric_content": {
+            "text_property": "Generated SQL must name explicit columns instead of using SELECT *."
+          }
+        },
+        {
+          "rubric_id": "standard_sql_dialect",
+          "rubric_content": {
+            "text_property": "Generated SQL must be valid BigQuery GoogleSQL (Standard SQL), not legacy SQL."
+          }
+        }
+      ]
+    },
+    "rubric_based_final_response_quality_v1": {
+      "threshold": 0.8,
+      "judge_model_options": {
+        "judge_model": "gemini-3.5-flash"
+      },
+      "rubrics": [
+        {
+          "rubric_id": "structured_answer",
+          "rubric_content": {
+            "text_property": "The final response is valid JSON matching {summary, sql_executed}: summary answers the user's question in plain language, and sql_executed contains the exact SQL that was run (empty string if none)."
+          }
+        }
+      ]
+    },
+    "hallucinations_v1": {
+      "threshold": 0.8,
+      "judge_model_options": {
+        "judge_model": "gemini-3.5-flash"
+      }
+    }
+  }
+}

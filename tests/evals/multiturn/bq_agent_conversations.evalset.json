@@ -1,0 +1,20 @@
+{
+  "eval_set_id": "bq_agent_conversations",
+  "name": "bq_agent_conversations",
+  "description": "Multi-turn smoke evals (cost-bounded): context carryover across turns. Run via RUN_ADK_EVAL=1 pytest. See bq_agent_conversations_extended.evalset.json for the on-demand suite.",
+  "eval_cases": [
+    {
+      "eval_id": "context_carryover_gender_filter",
+      "conversation_scenario": {
+        "starting_prompt": "What were the 5 most popular baby names in Texas in 1990? Use the bigquery-public-data.usa_names.usa_1910_2013 table.",
+        "conversation_plan": "After the agent answers with real queried data, ask exactly: 'And for girls only?' — the agent should reuse the context (Texas, 1990, same table) and only add a gender filter, without asking you to repeat anything. After it answers with the girls-only top 5 from real queried data, thank it and immediately end the conversation — do not accept offers for further analysis or extra queries. If it asks you to repeat parameters, answer once ('same as before, Texas 1990') but note it should have remembered.",
+        "user_persona": "EXPERT"
+      },
+      "session_input": {
+        "app_name": "bq_agent",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    }
+  ]
+}

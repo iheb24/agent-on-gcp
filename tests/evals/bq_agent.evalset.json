@@ -1,0 +1,128 @@
+{
+  "eval_set_id": "bq_agent_core",
+  "name": "bq_agent_core",
+  "description": "Single-turn core evals for the BigQuery assistant: trajectory, SQL safety, grounded answers.",
+  "eval_cases": [
+    {
+      "eval_id": "relative_date_count",
+      "conversation": [
+        {
+          "invocation_id": "eval-relative-date-001",
+          "user_content": {
+            "parts": [
+              {
+                "text": "I'm turning 30 this year. Using the bigquery-public-data.usa_names.usa_1910_2013 table, how many babies were named Mary in my birth year?"
+              }
+            ],
+            "role": "user"
+          },
+          "final_response": {
+            "parts": [
+              {
+                "text": "{\"summary\": \"Turning 30 this year means you were born in 1996. In 1996, 6,937 babies were named Mary in the US.\", \"sql_executed\": \"SELECT SUM(number) AS total FROM `bigquery-public-data.usa_names.usa_1910_2013` WHERE name = 'Mary' AND year = 1996 LIMIT 1000\"}"
+              }
+            ],
+            "role": "model"
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              { "name": "get_current_utc_date", "args": {} },
+              {
+                "name": "execute_sql_readonly",
+                "args": {
+                  "query": "SELECT SUM(number) AS total FROM `bigquery-public-data.usa_names.usa_1910_2013` WHERE name = 'Mary' AND year = 1996 LIMIT 1000"
+                }
+              }
+            ],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "bq_agent",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "explicit_limit_sample_rows",
+      "conversation": [
+        {
+          "invocation_id": "eval-limit-001",
+          "user_content": {
+            "parts": [
+              {
+                "text": "Show me 5 sample rows from bigquery-public-data.usa_names.usa_1910_2013"
+              }
+            ],
+            "role": "user"
+          },
+          "final_response": {
+            "parts": [
+              {
+                "text": "{\"summary\": \"Here are 5 sample rows from the USA names dataset, including state, gender, year, name, and number of babies.\", \"sql_executed\": \"SELECT state, gender, year, name, number FROM `bigquery-public-data.usa_names.usa_1910_2013` LIMIT 5\"}"
+              }
+            ],
+            "role": "model"
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "execute_sql_readonly",
+                "args": {
+                  "query": "SELECT state, gender, year, name, number FROM `bigquery-public-data.usa_names.usa_1910_2013` LIMIT 5"
+                }
+              }
+            ],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "bq_agent",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "aggregation_top_names",
+      "conversation": [
+        {
+          "invocation_id": "eval-agg-001",
+          "user_content": {
+            "parts": [
+              {
+                "text": "What are the top 3 most popular male names in California across all years in the bigquery-public-data.usa_names.usa_1910_2013 table?"
+              }
+            ],
+            "role": "user"
+          },
+          "final_response": {
+            "parts": [
+              {
+                "text": "{\"summary\": \"The top 3 male names in California across all years are Michael (420,127), David (362,813), and Robert (346,828).\", \"sql_executed\": \"SELECT name, SUM(number) AS total FROM `bigquery-public-data.usa_names.usa_1910_2013` WHERE state = 'CA' AND gender = 'M' GROUP BY name ORDER BY total DESC LIMIT 3\"}"
+              }
+            ],
+            "role": "model"
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "execute_sql_readonly",
+                "args": {
+                  "query": "SELECT name, SUM(number) AS total FROM `bigquery-public-data.usa_names.usa_1910_2013` WHERE state = 'CA' AND gender = 'M' GROUP BY name ORDER BY total DESC LIMIT 3"
+                }
+              }
+            ],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "bq_agent",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    }
+  ]
+}

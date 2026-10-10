@@ -1,0 +1,20 @@
+{
+  "eval_set_id": "bq_agent_conversations_extended",
+  "name": "bq_agent_conversations_extended",
+  "description": "On-demand multi-turn scenarios (higher cost; run manually via the adk eval CLI with tests/evals/multiturn/test_config.json): progressive disclosure and honest handling of data limits.",
+  "eval_cases": [
+    {
+      "eval_id": "progressive_disclosure_yearly_granularity",
+      "conversation_scenario": {
+        "starting_prompt": "Hi, can you show me a trend of a baby name over time?",
+        "conversation_plan": "You want a MONTHLY trend of the name 'Mary' in California for the year 1950, from the bigquery-public-data.usa_names.usa_1910_2013 table. Reveal details only when the agent asks for them, in this order: (1) the name Mary, (2) the state California, (3) the year 1950 and the exact table. If the agent explains that the table has yearly (not monthly) granularity and offers a yearly trend instead, accept that — do not insist on monthly. Once the agent delivers a trend for Mary in California built from real queried data (yearly, or monthly-if-it-finds-monthly-data), thank it and immediately end the conversation — do not accept offers for further analysis or extra queries.",
+        "user_persona": "NOVICE"
+      },
+      "session_input": {
+        "app_name": "bq_agent",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    }
+  ]
+}

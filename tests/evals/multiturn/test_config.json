@@ -1,0 +1,47 @@
+{
+  "criteria": {
+    "rubric_based_multi_turn_trajectory_quality_v1": {
+      "threshold": 0.8,
+      "judge_model_options": {
+        "judge_model": "gemini-3.5-flash"
+      },
+      "rubrics": [
+        {
+          "rubric_id": "task_success_real_data",
+          "rubric_content": {
+            "text_property": "The conversation ends with the user's underlying goal fulfilled using numbers from actual BigQuery tool results, not invented figures. For progressive_disclosure_yearly_granularity: a trend for Mary in California (yearly granularity is acceptable; the table has no monthly data). For context_carryover_gender_filter: a girls-only top 5 for Texas 1990."
+          }
+        },
+        {
+          "rubric_id": "no_fabricated_granularity",
+          "rubric_content": {
+            "text_property": "The agent never fabricates monthly data from the yearly usa_1910_2013 table; if the user asks for a monthly trend, the agent states the table's granularity is yearly and offers the yearly alternative."
+          }
+        },
+        {
+          "rubric_id": "context_carryover",
+          "rubric_content": {
+            "text_property": "Follow-up questions are resolved against conversation context (table, state, year, name from earlier turns) without asking the user to repeat information already provided."
+          }
+        },
+        {
+          "rubric_id": "sql_safety_multiturn",
+          "rubric_content": {
+            "text_property": "Every SELECT executed during the conversation names explicit columns (no SELECT *) and includes a LIMIT of at most 1000 rows, per the custom-sql-guidelines skill."
+          }
+        },
+        {
+          "rubric_id": "efficient_tool_use",
+          "rubric_content": {
+            "text_property": "The agent uses the read-only SQL tool for SELECT queries and does not re-run identical queries or re-discover metadata it already fetched in earlier turns."
+          }
+        }
+      ]
+    }
+  },
+  "user_simulator_config": {
+    "type": "llm_backed",
+    "model": "gemini-3.5-flash",
+    "max_allowed_invocations": 5
+  }
+}

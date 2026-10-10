@@ -1,0 +1,88 @@
+{
+  "eval_set_id": "bq_agent_smoke",
+  "name": "bq_agent_smoke",
+  "description": "Tier-1 smoke gate: deterministic trajectory checks only (no LLM judges — near-zero eval cost beyond the agent calls themselves).",
+  "eval_cases": [
+    {
+      "eval_id": "smoke_relative_date",
+      "conversation": [
+        {
+          "invocation_id": "eval-smoke-relative-001",
+          "user_content": {
+            "parts": [
+              {
+                "text": "I'm turning 30 this year. Using the bigquery-public-data.usa_names.usa_1910_2013 table, how many babies were named Mary in my birth year?"
+              }
+            ],
+            "role": "user"
+          },
+          "final_response": {
+            "parts": [
+              {
+                "text": "{\"summary\": \"Turning 30 this year means you were born in 1996. In 1996, 6,937 babies were named Mary in the US.\", \"sql_executed\": \"SELECT SUM(number) AS total FROM `bigquery-public-data.usa_names.usa_1910_2013` WHERE name = 'Mary' AND year = 1996 LIMIT 1000\"}"
+              }
+            ],
+            "role": "model"
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              { "name": "get_current_utc_date", "args": {} },
+              {
+                "name": "execute_sql_readonly",
+                "args": {
+                  "query": "SELECT SUM(number) AS total FROM `bigquery-public-data.usa_names.usa_1910_2013` WHERE name = 'Mary' AND year = 1996 LIMIT 1000"
+                }
+              }
+            ],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "bq_agent",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "smoke_sample_rows",
+      "conversation": [
+        {
+          "invocation_id": "eval-smoke-limit-001",
+          "user_content": {
+            "parts": [
+              {
+                "text": "Show me 5 sample rows from bigquery-public-data.usa_names.usa_1910_2013"
+              }
+            ],
+            "role": "user"
+          },
+          "final_response": {
+            "parts": [
+              {
+                "text": "{\"summary\": \"Here are 5 sample rows from the USA names dataset, including state, gender, year, name, and number of babies.\", \"sql_executed\": \"SELECT state, gender, year, name, number FROM `bigquery-public-data.usa_names.usa_1910_2013` LIMIT 5\"}"
+              }
+            ],
+            "role": "model"
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "execute_sql_readonly",
+                "args": {
+                  "query": "SELECT state, gender, year, name, number FROM `bigquery-public-data.usa_names.usa_1910_2013` LIMIT 5"
+                }
+              }
+            ],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "bq_agent",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    }
+  ]
+}
