@@ -28,6 +28,14 @@ This repository serves as a reference architecture demonstrating **dual extensio
 ├── .pre-commit-config.yaml      # Quality, formatting, typing, and security hooks
 ├── pyproject.toml               # Python dependencies and tool configurations
 ├── README.md                    # Project documentation
+├── scripts/                     # Deployment & teardown automation (agents-cli)
+│   ├── lib.sh                   # Shared helpers (project resolution, scaffold ADK patch)
+│   ├── setup_iam.sh             # Idempotent service account + IAM role provisioning
+│   ├── clean_scaffold.sh        # Removes generated agents-cli scaffold artifacts
+│   ├── deploy_agent_runtime.sh  # Deploy/update on Vertex AI Agent Engine
+│   ├── destroy_agent_runtime.sh # Tear down Agent Engine (+ IAM with --all)
+│   ├── deploy_auto_cloudrun.sh  # Deploy/update on an auto-scaffolded Cloud Run service
+│   └── destroy_auto_cloudrun.sh # Delete the Cloud Run service
 ├── skills/
 │   └── quality_standards.md     # Engineering & pre-commit quality standards
 ├── src/
@@ -125,6 +133,35 @@ uv run adk eval src/agent/app tests/evals/multiturn/bq_agent_conversations_exten
 Cost note: the BigQuery MCP toolset is filtered to the 6 query/metadata tools the agent actually uses (`BQ_MCP_TOOL_ALLOWLIST` in `bq_mcp_client.py`); the dropped job-management tools carried ~78% of the schema tokens. After filtering, an invocation's prompt is ~44K tokens (was ~165K+), and Vertex implicit caching discounts the stable prefix further within a session. Budget tiers accordingly; see the report for the measured anatomy.
 
 See `tests/evals/EVALUATION_REPORT.md` for the latest baseline results and analysis. The easiest way to add cases is the **Eval** tab in `uv run adk web src/agent`: run a real session, then save it as an eval case.
+
+---
+
+## Deployment
+
+Two deployment strategies are automated under `scripts/`, both driven by [`agents-cli`](https://pypi.org/project/google-agents-cli/). Prerequisites: `gcloud` authenticated with an active project (`gcloud config set project YOUR_PROJECT_ID`), plus `uv`, `jq`, and `curl`.
+
+Both scripts first provision the agent service account (`bq-agent-sa`, scoped to BigQuery read/job, Vertex AI, MCP, and telemetry roles) via `setup_iam.sh`, then scaffold, patch, and deploy.
+
+### Strategy A: Vertex AI Agent Engine (managed)
+
+```bash
+./scripts/deploy_agent_runtime.sh    # deploy or update
+./scripts/destroy_agent_runtime.sh   # delete the agent only
+./scripts/destroy_agent_runtime.sh --all  # also remove IAM bindings + service account
+```
+
+Wraps `agents-cli deploy --deployment-target agent_runtime`. State is tracked in `src/agent/deployment_metadata.json` (gitignored): keep it to make redeploys in-place updates; deleting it creates a new reasoning engine. The destroy script deletes the engine through the Vertex AI REST API, since `agents-cli` has no delete command.
+
+### Strategy B: Cloud Run (auto-scaffolded)
+
+```bash
+./scripts/deploy_auto_cloudrun.sh    # deploy or update service "bq-agent-auto"
+./scripts/destroy_auto_cloudrun.sh   # delete the Cloud Run service
+```
+
+Wraps `agents-cli deploy --deployment-target cloud_run`. No state file: updates upsert by service name, so keep `SERVICE_NAME` stable. Sessions are in-memory and lost on scale-down; see the `feature/cloudrun-agent` branch for a Terraform-managed variant (private service, OIDC, Cloud Scheduler) with the same deploy flow.
+
+> **Note on scaffold patching:** the `agents-cli` template currently pins `google-adk >=2.8.0,<2.9.0` without the `mcp` extra; the scripts repin it to `>=2.10.0` with `mcp` so `McpToolset` works out of the box (`align_scaffold_adk` in `scripts/lib.sh`).
 
 ---
 
